@@ -134,12 +134,14 @@ button:active{transform:translateY(1px)}
 .history ul{list-style:none;padding:0;margin:0;text-align:left}
 .history li{margin-bottom:4px}
 
-/* ссылки в истории — как в "Выпало" */
-.history a{
+/* ссылки одинаковые */
+.history a,
+#lastResult a{
     color:#7cc7ff;
     text-decoration:none;
 }
-.history a:hover{
+.history a:hover,
+#lastResult a:hover{
     text-decoration:underline;
 }
 
@@ -153,15 +155,8 @@ button:active{transform:translateY(1px)}
     border-bottom:1px solid rgba(255,255,255,.15);
 }
 #lastResult span{color:#ffd66b}
-#lastResult a{
-    color:#7cc7ff;
-    text-decoration:none;
-}
-#lastResult a:hover{
-    text-decoration:underline;
-}
 
-/* скрывать пока нет результата */
+/* скрывать пока пусто */
 #lastResult:has(span:empty){
     display:none;
 }
@@ -276,6 +271,7 @@ canvas{
 </div>
 
 <script>
+/* helpers */
 function toggle(id){
     const e=document.getElementById(id);
     e.style.display=e.style.display==='block'?'none':'block';
@@ -363,11 +359,17 @@ function draw(){
         const step=2*Math.PI/sectors.length;
         sectors.forEach((t,i)=>{
             const start=i*step+angle;
+
             ctx.beginPath();
             ctx.moveTo(cx,cy);
             ctx.arc(cx,cy,r,start,start+step);
             ctx.closePath();
-            ctx.fillStyle=`hsl(${i*360/sectors.length},70%,45%)`;
+
+            if(i===highlightIndex){
+                ctx.fillStyle=`hsla(${i*360/sectors.length},90%,65%,${0.5+0.5*Math.sin(blinkPhase)})`;
+            }else{
+                ctx.fillStyle=`hsl(${i*360/sectors.length},70%,45%)`;
+            }
             ctx.fill();
 
             ctx.save();
@@ -440,13 +442,27 @@ function spinWheel(){
 
             const result=sectors[idx];
             lastResult.innerHTML=`Выпало: <span>${isURL(result)?formatLink(result):result}</span>`;
-
             history.push(result);
             updateHistory();
 
-            sectors.splice(idx,1);
-            draw();
+            highlightIndex=idx;
+            blinkPhase=0;
+            blinking=true;
+
+            const blink=setInterval(()=>{
+                blinkPhase+=0.25;
+                draw();
+            },30);
+
             bell();
+
+            setTimeout(()=>{
+                clearInterval(blink);
+                highlightIndex=null;
+                blinking=false;
+                sectors.splice(idx,1);
+                draw();
+            },3000);
         }
     },20);
 }
