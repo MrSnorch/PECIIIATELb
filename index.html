@@ -196,7 +196,7 @@ input{
 canvas{
     display:block;
     filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
-    cursor:grab;
+    cursor:default;
 }
 
 /* FIX: кнопки Добавить / Сброс в одну строку */
@@ -639,17 +639,6 @@ const ctx=wheel.getContext('2d');
 let sectors=[],angle=0,spinning=false,blinking=false,history=[];
 let highlightIndex=null,blinkPhase=0;
 
-/* MOUSE SPIN */
-let dragging=false,lastMouseAngle=0,lastMouseTime=0,mouseSpeed=0;
-
-function getMouseAngle(e){
-    const r=wheel.getBoundingClientRect();
-    return Math.atan2(
-        e.clientY-(r.top+r.height/2),
-        e.clientX-(r.left+r.width/2)
-    );
-}
-
 function draw(){
     ctx.clearRect(0,0,260,260);
     const cx=130,cy=130,r=130;
@@ -716,12 +705,12 @@ function draw(){
 }
 draw();
 
-/* BUTTON / MOUSE SPIN */
-function spinWheel(forcedSpeed){
+/* SPIN WHEEL */
+function spinWheel(){
     if(sectors.length<2||spinning||blinking)return;
 
     spinning=true;
-    let speed = forcedSpeed ?? (Math.random()*0.6 + 0.25);
+    let speed = Math.random()*0.6 + 0.25;
     let friction = Math.random()*0.008 + 0.982;
     let last=null;
 
@@ -764,38 +753,6 @@ function spinWheel(forcedSpeed){
         }
     },20);
 }
-
-/* MOUSE EVENTS */
-wheel.addEventListener('mousedown',e=>{
-    if(spinning||blinking||sectors.length<2)return;
-    dragging=true;
-    lastMouseAngle=getMouseAngle(e);
-    lastMouseTime=performance.now();
-    mouseSpeed=0;
-});
-window.addEventListener('mousemove',e=>{
-    if(!dragging)return;
-
-    const a=getMouseAngle(e);
-    let delta=a-lastMouseAngle;
-    if(delta>Math.PI)delta-=Math.PI*2;
-    if(delta<-Math.PI)delta+=Math.PI*2;
-
-    const now=performance.now();
-    angle+=delta;
-    draw();
-
-    mouseSpeed=(delta/(now-lastMouseTime))*16;
-    lastMouseAngle=a;
-    lastMouseTime=now;
-});
-window.addEventListener('mouseup',()=>{
-    if(!dragging)return;
-    dragging=false;
-    if(Math.abs(mouseSpeed)>0.01){
-        spinWheel(mouseSpeed);
-    }
-});
 
 /* HISTORY */
 function updateHistory(){
