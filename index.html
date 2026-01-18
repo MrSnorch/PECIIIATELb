@@ -1503,9 +1503,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function showInstallButton() {
-    // Find the wheel section to match its width
-    const wheelSection = document.querySelector('.card.full');
-    if (!wheelSection) return;
+    // Find the wheel card container
+    const wheelCard = document.querySelector('.card.full');
+    if (!wheelCard) return;
     
     // Create install button
     const installBtn = document.createElement('button');
@@ -1513,12 +1513,10 @@ function showInstallButton() {
     installBtn.innerHTML = '📲 Установить приложение';
     installBtn.title = 'Установить как приложение на устройство';
     
-    // Style the button to match wheel section width
-    const wheelWidth = wheelSection.offsetWidth;
+    // Style the button to match card width
     installBtn.style.cssText = `
-        width: ${wheelWidth}px;
-        max-width: 100%;
-        margin: 15px auto 0 auto;
+        width: 100%;
+        margin: 15px 0 0 0;
         padding: 14px 20px;
         background: linear-gradient(135deg, #4CAF50, #45a049);
         color: white;
@@ -1533,7 +1531,7 @@ function showInstallButton() {
         animation: pulse 2s infinite;
     `;
     
-    // Hover effects (subtle for full-width button)
+    // Hover effects
     installBtn.addEventListener('mouseenter', () => {
         installBtn.style.transform = 'translateY(-2px)';
         installBtn.style.boxShadow = '0 8px 20px rgba(76, 175, 80, 0.55)';
@@ -1549,8 +1547,8 @@ function showInstallButton() {
         installApp(installBtn);
     });
     
-    // Insert after the wheel section
-    wheelSection.parentNode.insertBefore(installBtn, wheelSection.nextSibling);
+    // Insert after the wheel card closes
+    wheelCard.parentNode.insertBefore(installBtn, wheelCard.nextSibling);
 }
 
 function installApp(button) {
