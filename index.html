@@ -1513,11 +1513,12 @@ function showInstallButton() {
     installBtn.innerHTML = '📲 Установить приложение';
     installBtn.title = 'Установить как приложение на устройство';
     
-    // Style the button to match card width
+    // Style the button centered
     installBtn.style.cssText = `
-        width: 100%;
-        margin: 15px 0 0 0;
-        padding: 14px 20px;
+        width: fit-content;
+        min-width: 280px;
+        margin: 15px auto 0 auto;
+        padding: 14px 24px;
         background: linear-gradient(135deg, #4CAF50, #45a049);
         color: white;
         border: none;
@@ -1529,6 +1530,8 @@ function showInstallButton() {
         transition: all 0.2s ease;
         display: block;
         animation: pulse 2s infinite;
+        white-space: nowrap;
+        text-align: center;
     `;
     
     // Hover effects
