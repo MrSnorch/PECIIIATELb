@@ -834,7 +834,7 @@ canvas{
 
 <!-- COIN -->
 <div class="card">
-<button class="coin-settings-btn" onclick="toggle('coinSettings')">⚙️</button>
+<button class="coin-settings-btn" onclick="playClick(); toggle('coinSettings')">⚙️</button>
 <div class="visual coin" id="coin">🪙</div>
 <div class="coin-settings" id="coinSettings">
     <div class="settings-header">🪙 Настройки монетки</div>
@@ -863,7 +863,7 @@ canvas{
 
 <!-- DICE -->
 <div class="card">
-<button class="dice-settings-btn" onclick="toggle('diceSettings')">⚙️</button>
+<button class="dice-settings-btn" onclick="playClick(); toggle('diceSettings')">⚙️</button>
 <div class="visual dice" id="dice">🎲</div>
 <div class="dice-settings" id="diceSettings">
     <div class="settings-header">🎲 Настройки кубика</div>
@@ -887,10 +887,10 @@ canvas{
 <div class="arrow"></div>
 
 <!-- Переключатель звука -->
-<button class="wheel-sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+<button class="wheel-sound-btn" id="soundToggle" onclick="playClickAlways(); toggleSound()">🔊</button>
 
 <!-- Настройки колеса -->
-<button class="wheel-settings-btn" onclick="toggle('wheelSettings')">✏️</button>
+<button class="wheel-settings-btn" onclick="playClick(); toggle('wheelSettings')">✏️</button>
 <div class="wheel-settings" id="wheelSettings">
     <h3>✏️ Редактор секторов</h3>
     <div class="sector-list" id="sectorList">
@@ -900,12 +900,12 @@ canvas{
 
 <div class="wheel-wrap">
 <canvas id="wheel" width="260" height="260"></canvas>
-<button class="wheel-copy-btn" onclick="copySectors()">📋</button>
+<button class="wheel-copy-btn" onclick="playClick(); copySectors()">📋</button>
 </div>
 
 <div class="sector-actions">
     <input id="sectorInput" placeholder="Текст сектора">
-    <button class="sector-add-btn" onclick="addSector()">➕</button>
+    <button class="sector-add-btn" onclick="playClick(); addSector()">➕</button>
 </div>
 
 <button onclick="spinWheel()">КРУТИТЬ</button>
@@ -914,9 +914,9 @@ canvas{
     <div class="log" id="wheelLog"></div>
     <div class="history-container">
 <div class="history-header">
-    <button class="history-clear-btn" onclick="clearHistory()">🗑️</button>
+    <button class="history-clear-btn" onclick="playClick(); clearHistory()">🗑️</button>
     <div class="history-title">📜 История</div>
-    <button class="history-copy-btn" onclick="copyHistory()">📋</button>
+    <button class="history-copy-btn" onclick="playClick(); copyHistory()">📋</button>
 </div>
 <div class="history-divider"></div>
 <div class="history-scroll-wrapper">
@@ -934,6 +934,7 @@ canvas{
 <audio id="sndDice"  src="sounds/dice.mp3" preload="auto"></audio>
 <audio id="sndWheel" src="sounds/wheel.mp3" preload="auto"></audio>
 <audio id="sndBell"  src="sounds/bell.mp3" preload="auto"></audio>
+<audio id="sndClick" src="sounds/click.mp3" preload="auto"></audio>
 
 <!-- Toast Notification -->
 <div class="toast-notification" id="toastNotification">
@@ -994,7 +995,8 @@ const sndCoin=document.getElementById('sndCoin');
 const sndDice=document.getElementById('sndDice');
 const sndWheel=document.getElementById('sndWheel');
 const sndBell=document.getElementById('sndBell');
-[sndCoin,sndDice,sndWheel,sndBell].forEach(s=>s.volume=0.6);
+const sndClick=document.getElementById('sndClick');
+[sndCoin,sndDice,sndWheel,sndBell,sndClick].forEach(s=>s.volume=0.6);
 
 function toggleSound(){
     soundEnabled=!soundEnabled;
@@ -1011,6 +1013,18 @@ function play(s){
     if(!soundEnabled)return;
     s.currentTime=0;
     s.play().catch(()=>{});
+}
+
+function playClick(){
+    if(!soundEnabled)return;
+    sndClick.currentTime=0;
+    sndClick.play().catch(()=>{});
+}
+
+function playClickAlways(){
+    // Always play click sound regardless of soundEnabled state
+    sndClick.currentTime=0;
+    sndClick.play().catch(()=>{});
 }
 
 /* COIN */
@@ -1129,7 +1143,14 @@ draw();
 
 /* SPIN WHEEL */
 function spinWheel(){
-    if(sectors.length<2||spinning||blinking)return;
+    // Check if there are enough sectors
+    if(sectors.length < 2){
+        showToast('❌ Добавьте минимум 2 сектора для вращения', 'error');
+        return;
+    }
+    
+    // Check if wheel is already spinning or blinking
+    if(spinning||blinking)return;
 
     spinning=true;
     let speed = Math.random()*0.6 + 0.25;
@@ -1220,7 +1241,7 @@ function resetWheel(){
 
 function copySectors(){
     if(sectors.length === 0){
-        showToast('Нет секторов для копирования', 'error');
+        showToast('❌ Нет секторов для копирования', 'error');
         return;
     }
     
@@ -1244,15 +1265,28 @@ function showToast(message, type = 'success'){
     const toast = document.getElementById('toastNotification');
     const toastMessage = document.getElementById('toastMessage');
     
+    // Clear any existing timeout
+    if(window.toastTimeout){
+        clearTimeout(window.toastTimeout);
+    }
+    
+    // Hide existing notification immediately
+    toast.classList.remove('show');
+    
+    // Set new content and type
     toastMessage.textContent = message;
     toast.className = `toast-notification ${type}`;
     
-    // Show toast
+    // Force reflow to ensure immediate hiding
+    void toast.offsetWidth;
+    
+    // Show new toast
     toast.classList.add('show');
     
     // Auto-hide after 3 seconds
-    setTimeout(() => {
+    window.toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
+        window.toastTimeout = null;
     }, 3000);
 }
 
@@ -1284,8 +1318,8 @@ function clearHistory(){
         // Replace with confirm/cancel buttons
         clearBtn.outerHTML = `
             <div class="confirm-clear-history">
-                <button class="confirm-btn" onclick="confirmClearHistory()">✓</button>
-                <button class="cancel-btn" onclick="cancelClearHistory()">✕</button>
+                <button class="confirm-btn" onclick="playClick(); confirmClearHistory()">✓</button>
+                <button class="cancel-btn" onclick="playClick(); cancelClearHistory()">✕</button>
             </div>
         `;
     }
@@ -1309,7 +1343,7 @@ function restoreClearButton(){
     if(header){
         const confirmDiv = header.querySelector('.confirm-clear-history');
         if(confirmDiv){
-            confirmDiv.outerHTML = '<button class="history-clear-btn" onclick="clearHistory()">🗑️</button>';
+            confirmDiv.outerHTML = '<button class="history-clear-btn" onclick="playClick(); clearHistory()">🗑️</button>';
         }
     }
 }
@@ -1332,7 +1366,7 @@ function updateSectorList(){
             <div class="sector-item">
                 <div class="sector-color-strip" style="background:${bgColor}"></div>
                 <input class="sector-edit-input" type="text" value="${sector}" data-index="${index}" onblur="updateSectorText(this)" onkeypress="handleSectorKeyPress(event, this)">
-                <button class="delete-sector" onclick="deleteSector(${index})">✕</button>
+                <button class="delete-sector" onclick="playClick(); deleteSector(${index})">✕</button>
             </div>
         `;
     });
@@ -1365,8 +1399,8 @@ function deleteSector(index){
                 <input class="sector-edit-input" type="text" value="${sectorValue}" data-index="${index}" readonly style="background: rgba(255,255,255,0.1); color: #fff;">
                 <div style="flex:1"></div>
                 <div class="confirm-delete">
-                    <button class="confirm-btn" onclick="confirmDelete(${index})">✓</button>
-                    <button class="cancel-btn" onclick="cancelDelete(${index})">✕</button>
+                    <button class="confirm-btn" onclick="playClick(); confirmDelete(${index})">✓</button>
+                    <button class="cancel-btn" onclick="playClick(); cancelDelete(${index})">✕</button>
                 </div>
             `;
         }
